@@ -2,6 +2,7 @@ import requests
 import json
 import time
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,8 +11,7 @@ load_dotenv()
 # Get the current public IP address
 def get_public_ip():
     response = requests.get('https://api.ipify.org?format=json')
-    ip = json.loads(response.text)['ip']
-    return ip
+    return json.loads(response.text)['ip']
 
 
 # Update the DNS record on Cloudflare
@@ -28,13 +28,11 @@ def update_dns_record(domain_name, ip_address, record_id):
     }
     url = f'https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/{record_id}'
     response = requests.patch(url, headers=headers, json=data)
-    print(response.request.headers)
-    print(response.text)
 
     if response.status_code == 200:
-        print(f'DNS record updated for {domain_name}')
+        logging.info(f'DNS record updated for {domain_name}')
     else:
-        print(f'Error updating DNS record for {domain_name}')
+        logging.error(f'Error updating DNS record for {domain_name}')
 
 
 def get_dns_record_id():
@@ -49,7 +47,7 @@ def get_dns_record_id():
         list_record = response.json()["result"]
         return get_id_by_name(list_record, domain_names)
     else:
-        print(f'Error get DNS record for {zone_id}')
+        logging.error(f'Error get DNS record for {zone_id}')
 
 
 def get_id_by_name(dns_dict, names):
@@ -65,6 +63,7 @@ def get_id_by_name(dns_dict, names):
 domain_names = os.getenv('DOMAIN_NAMES').split(',')
 zone_id = os.getenv('ZONE_ID')
 api_key = os.getenv('API_KEY')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 # Run the script every hour
 while True:
